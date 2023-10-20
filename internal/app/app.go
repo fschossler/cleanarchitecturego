@@ -1,16 +1,21 @@
 package app
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 
 	"github.com/fschossler/cleanarchitecturego/internal/controller"
+	"github.com/fschossler/cleanarchitecturego/internal/repository"
 	"github.com/gorilla/mux"
+	_ "github.com/lib/pq"
 )
 
 // App represents the application.
 type App struct {
-	Router *mux.Router
+	Router     *mux.Router
+	DB         *sql.DB
+	Repository *repository.BookRepository
 }
 
 // NewApp initializes and configures the application.
@@ -19,27 +24,24 @@ func NewApp() *App {
 		Router: mux.NewRouter(),
 	}
 
-	// Initialize the database here if needed.
-	db, err := database.InitDatabase()
+	// Initialize the PostgreSQL database connection
+	db, err := sql.Open("postgres", "user=myuser dbname=mydatabase password=mypassword sslmode=disable")
 	if err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
+		log.Fatalf("Failed to connect to the database: %v", err)
 	}
+	app.DB = db
 
-	// Initialize your dependencies and controllers.
-	// Example:
-	bookController := controller.NewBookController(app.Router, db)
+	// Initialize the book repository
+	bookRepo := repository.NewBookRepository(db)
+	app.Repository = bookRepo
 
-	// Set up routes
-	app.initRoutes()
+	// Initialize the book controller with the app instance
+	bookController := controller.NewBookController(app.Router, app.Repository) // Pass the router and repository
+
+	// Set up routes for the book controller
+	bookController.InitRoutes(app.Router)
 
 	return app
-}
-
-// initRoutes sets up the application's routes.
-func (a *App) initRoutes() {
-	// Create your controller instances and initialize routes here.
-	// Example:
-	bookController.InitRoutes()
 }
 
 // StartServer starts the HTTP server.
