@@ -1,7 +1,12 @@
 package main
 
-import "fmt"
+import "github.com/fschossler/cleanarchitecturego/internal/app"
 
 func main() {
-	fmt.Println("Hello World!")
+	// Initialize the application
+	myApp := app.NewApp()
+
+	// Start the HTTP server
+	port := ":8080"
+	myApp.StartServer(port)
 }
